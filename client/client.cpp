@@ -26,7 +26,7 @@ int main() {
 			std::string resp;
 			while (!finished) {
 				if (getline(server, resp)) {
-					if (resp.substr(resp.length() - 1, 1) == "\r" ) {
+					if (resp.substr(resp.length() - 1, 1) == "\r") {
 						resp.erase(resp.end() - 1); // remove '\r'
 						finished = true;
 					}
@@ -41,6 +41,14 @@ int main() {
 			std::cout << prompt;
 			std::string req;
 			if (getline(std::cin, req)) {
+				if (req == "dir") {
+					std::string par1;
+					std::cout << "type path:";
+					if (getline(std::cin, par1)) {
+						req += crlf;
+						req += par1;
+					}
+				}
 				finished = false;
 				server << req << crlf;
 			}

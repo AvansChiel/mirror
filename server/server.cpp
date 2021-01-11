@@ -40,20 +40,34 @@ std::time_t to_time_t(TP tp)
     return system_clock::to_time_t(sctp);
 }
 
-std::string dir(){
-    using recursive_directory_iterator = std::filesystem::recursive_directory_iterator;
+std::string dir(const std::string& path) {
+    using directory_iterator = std::filesystem::directory_iterator;
     std::string resultString = "";
-    for (const auto& dirEntry : recursive_directory_iterator(rootPath)) {
+    int counter = 0;
+    std::string fullPath = rootPath;
+    if (path != "" && path != ".") {
+        fullPath = rootPath + "/" + path;
+    }
+    if (!std::filesystem::exists(fullPath)) {
+        std::string returnString = "Error: No such directory!";
+        return returnString;
+    }
+    try {
+
+    
+    for (const auto& dirEntry : directory_iterator(fullPath)) {
+        counter++;
         std::string type;
 
         if (dirEntry.is_directory()) {
             resultString += "D|";
         }
-        else {
+        else if(dirEntry.is_regular_file()){
             resultString += "F|";
         }
-        char buffer[32];
-        // Format: Mo, 15.06.2009 20:20:00
+        else {
+            resultString += "*|";
+        }
         struct tm newTime;
         std::time_t timestamp = to_time_t<decltype(dirEntry.last_write_time())>(dirEntry.last_write_time());
         localtime_s(&newTime, &timestamp);
@@ -78,6 +92,13 @@ std::string dir(){
         resultString += filesize + "";
         resultString += lf;
     }
+    }
+    catch (const std::exception& ex) {
+        std::string returnString = "Error: No such directory!";
+        return returnString;
+    }
+    std::string prefix = "items found: " + std::to_string(counter) + lf;
+    resultString = prefix + resultString;
     //remove last newline
     resultString.erase(resultString.end() - 1);
     return resultString;
@@ -90,32 +111,38 @@ int main() {
 
         asio::io_context io_context;
         asio::ip::tcp::acceptor server{ io_context, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), server_port) };
-
         for (;;) {
             std::cerr << "waiting for client to connect\n";
             asio::ip::tcp::iostream client;
             server.accept(client.socket());
             std::cerr << "client connected from " << client.socket().local_endpoint() << lf;
             client << "Welcome to AvanSync server 1.0" << crlf;
-            for (;;) {
-                std::string request;
-                getline(client, request);
-                request.erase(request.end() - 1); // remove '\r'
-                std::cerr << "client says: " << request << lf;
+                for (;;) {
+                    std::string request;
+                    getline(client, request);
+                    request.erase(request.end() - 1); // remove '\r'
+                    //if (request.substr(request.length() - 1, 1) == "\r") {
+                    //    request.erase(request.end() - 1); // remove '\r'
+                    //    finished = true;
+                    //}
 
-                if (request == "quit") {
-                    client << "Bye." << crlf;
-                    std::cerr << "will disconnect from client " << client.socket().local_endpoint() << lf;
-                    break;
-                }else if (request == "info") {
-                    client << "Data Mirror server 1.0, copyright (c) 2021 Chiel Arts." << crlf;
-                }
-                else if (request == "dir") {
-                    client << dir() << crlf;
-                }
-                else {
-                    client << request << crlf; // simply echo the request
-                }
+                    std::cerr << "client says: " << request << lf;
+
+                    if (request == "quit") {
+                        client << "Bye." << crlf;
+                        std::cerr << "will disconnect from client " << client.socket().local_endpoint() << lf;
+                        break;
+                    }else if (request == "info") {
+                        client << "Data Mirror server 1.0, copyright (c) 2021 Chiel Arts." << crlf;
+                    }
+                    else if (request == "dir") {
+                        getline(client, request);
+                        request.erase(request.end() - 1);
+                        client << dir(request) << crlf;
+                    }
+                    else {
+                        client << request << crlf; // simply echo the request
+                    }
             }
             
 

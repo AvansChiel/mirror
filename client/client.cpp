@@ -62,6 +62,20 @@ int main() {
 						req += par2;
 					}
 				}
+				else if (req == "ren") {
+					std::string par1;
+					std::string par2;
+					std::cout << "type path to change:";
+					if (getline(std::cin, par1)) {
+						req += crlf;
+						req += par1;
+					}
+					std::cout << "type new name:";
+					if (getline(std::cin, par2)) {
+						req += crlf;
+						req += par2;
+					}
+				}
 				finished = false;
 				server << req << crlf;
 			}

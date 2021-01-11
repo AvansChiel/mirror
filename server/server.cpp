@@ -40,6 +40,32 @@ std::time_t to_time_t(TP tp)
     return system_clock::to_time_t(sctp);
 }
 
+std::string mkdir(const std::string& path, const std::string& dirname) {
+    std::string fullPath = rootPath;
+    if (path != "" && path != ".") {
+        fullPath = rootPath + "/" + path;
+    }
+    if (dirname == "" || dirname == ".") {
+        std::string returnString = "Error: Invalid directory name!";
+        return returnString;
+    }
+    if (!std::filesystem::exists(fullPath)) {
+        std::string returnString = "Error: No such directory!";
+        return returnString;
+    }
+    try
+    {
+        std::filesystem::create_directory(fullPath + "/" + dirname);
+        std::string returnString = "OK";
+        return returnString;
+    }
+    catch (const std::exception&)
+    {
+        std::string returnString = "Error: Failed to create directory";
+        return returnString;
+    }
+}
+
 std::string dir(const std::string& path) {
     using directory_iterator = std::filesystem::directory_iterator;
     std::string resultString = "";
@@ -139,6 +165,15 @@ int main() {
                         getline(client, request);
                         request.erase(request.end() - 1);
                         client << dir(request) << crlf;
+                    }
+                    else if (request == "mkdir") {
+                        getline(client, request);
+                        request.erase(request.end() - 1);
+                        std::string parent = request;
+                        getline(client, request);
+                        request.erase(request.end() - 1);
+                        std::string dirname = request;
+                        client << mkdir(parent, dirname) << crlf;
                     }
                     else {
                         client << request << crlf; // simply echo the request

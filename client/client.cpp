@@ -48,6 +48,19 @@ int main() {
 						req += crlf;
 						req += par1;
 					}
+				}else if (req == "mkdir") {
+					std::string par1;
+					std::string par2;
+					std::cout << "type path:";
+					if (getline(std::cin, par1)) {
+						req += crlf;
+						req += par1;
+					}
+					std::cout << "type new dirname:";
+					if (getline(std::cin, par2)) {
+						req += crlf;
+						req += par2;
+					}
 				}
 				finished = false;
 				server << req << crlf;

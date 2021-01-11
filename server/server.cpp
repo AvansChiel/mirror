@@ -54,13 +54,10 @@ std::string del(const std::string& path) {
         std::string returnString = "Error: No such file or directory!";
         return returnString;
     }
-    if (std::filesystem::is_directory(fullPath) && !std::filesystem::is_empty(fullPath)) {
-        std::string returnString = "Error: Folder is not empty!";
-        return returnString;
-    }
     try
     {
-        std::filesystem::remove(fullPath);
+        
+        std::filesystem::remove_all(fullPath);
         std::string returnString = "OK";
         return returnString;
     }

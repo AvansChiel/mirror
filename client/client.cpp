@@ -75,6 +75,13 @@ int main() {
 						req += crlf;
 						req += par2;
 					}
+				} else if (req == "del") {
+					std::string par1;
+					std::cout << "type path:";
+					if (getline(std::cin, par1)) {
+						req += crlf;
+						req += par1;
+					}
 				}
 				finished = false;
 				server << req << crlf;

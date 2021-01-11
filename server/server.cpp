@@ -40,6 +40,37 @@ std::time_t to_time_t(TP tp)
     return system_clock::to_time_t(sctp);
 }
 
+std::string del(const std::string& path) {
+    std::string fullPath = rootPath;
+
+    if (path != "" && path.substr(0,1) != ".") {
+        fullPath = rootPath + "/" + path;
+    }
+    else {
+        std::string returnString = "Error: permission denied!";
+        return returnString;
+    }
+    if (!std::filesystem::exists(fullPath)) {
+        std::string returnString = "Error: No such file or directory!";
+        return returnString;
+    }
+    if (std::filesystem::is_directory(fullPath) && !std::filesystem::is_empty(fullPath)) {
+        std::string returnString = "Error: Folder is not empty!";
+        return returnString;
+    }
+    try
+    {
+        std::filesystem::remove(fullPath);
+        std::string returnString = "OK";
+        return returnString;
+    }
+    catch (const std::exception& e)
+    {
+        std::string returnString = "Error: Failed to remove";
+        return returnString;
+    }
+}
+
 std::string ren(const std::string& path, const std::string& newname) {
     std::string fullPath = rootPath;
     if (path != "" && path != ".") {
@@ -60,7 +91,7 @@ std::string ren(const std::string& path, const std::string& newname) {
         std::string returnString = "OK";
         return returnString;
     }
-    catch (const std::exception&)
+    catch (const std::exception& e)
     {
         std::string returnString = "Error: Failed to create directory";
         return returnString;
@@ -210,6 +241,11 @@ int main() {
                         request.erase(request.end() - 1);
                         std::string newname = request;
                         client << ren(path, newname) << crlf;
+                    }
+                    else if (request == "del") {
+                        getline(client, request);
+                        request.erase(request.end() - 1);
+                        client << del(request) << crlf;
                     }
                     else {
                         client << request << crlf; // simply echo the request

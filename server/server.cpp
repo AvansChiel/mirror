@@ -54,10 +54,10 @@ void get(const std::string& path, asio::ip::tcp::iostream& client) {
     if (!std::filesystem::exists(fullPath)) {
         client << "Error: No such file or directory" << crlf;
         return;
-    }
+    }   
     try
     {
-        client << std::to_string(std::filesystem::file_size(fullPath)) << crlf;
+        client << std::filesystem::file_size(fullPath) << crlf;
         std::ifstream input(fullPath, std::ios::binary);
         std::copy(
             std::istreambuf_iterator<char>(input),

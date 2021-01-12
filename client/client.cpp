@@ -9,7 +9,7 @@
 #include <string>
 #include <stdexcept>
 #include <asio.hpp>
-
+#include <fstream>
 bool is_number(const std::string& s)
 {
 	std::string::const_iterator it = s.begin();
@@ -27,28 +27,44 @@ int main() {
 		const std::string rootPath = "E:/datamirror/client";
 		int expectedRows = 1;
 		bool expectRowAmount = false;
+		bool receiveFile = false;
+		std::string writePath = "";
 		asio::ip::tcp::iostream server{ server_address, server_port };
 		if (!server) throw std::runtime_error("could not connect to server");
 
 		while (server) {
 			std::string resp;
 			while (expectedRows > 0) {
-				if (getline(server, resp)) {
-					if (resp.substr(resp.length() - 1, 1) == "\r") {
-						resp.erase(resp.end() - 1); // remove '\r'
-						expectedRows--;;
-						if (expectRowAmount) {
-							if (is_number(resp)) {
-								expectedRows = std::stoi(resp);
-							}
-							expectRowAmount = false;
-						}
+				if (writePath != "") {
+					std::string binaryData;
+					if (getline(server, resp)) {
+						resp.erase(resp.end() - 1);//remove r
+						int byteAmount = std::stoi(resp) + 1;
+						char* buffer = new char[byteAmount];
+						byteAmount--;
+						buffer[byteAmount] = '\0';
 
+						server.read(buffer, byteAmount);
+
+						std::ofstream ofs;
+						ofs.open(rootPath + "/" +  writePath);
+						ofs << buffer;	
+						ofs.close();
+
+						writePath = "";
 					}
-					
+				}
+				else if (getline(server, resp)) {
+					resp.erase(resp.end() - 1); // remove '\r'
+					expectedRows--;;
+					if (expectRowAmount) {
+						if (is_number(resp)) {
+							expectedRows = std::stoi(resp);
+						}
+						expectRowAmount = false;
+					}
 					std::cout << resp << lf;
 					if (resp == "Bye.") break;
-
 				}
 				
 			}
@@ -102,12 +118,15 @@ int main() {
 					}
 				}
 				else if (req == "get") {
+					receiveFile = true;
 					std::string par1;
 					std::cout << "type path:";
 					if (getline(std::cin, par1)) {
 						req += crlf;
 						req += par1;
 					}
+					writePath = par1;
+
 				}
 
 				//finished = false;

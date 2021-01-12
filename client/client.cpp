@@ -10,6 +10,13 @@
 #include <stdexcept>
 #include <asio.hpp>
 
+bool is_number(const std::string& s)
+{
+	std::string::const_iterator it = s.begin();
+	while (it != s.end() && std::isdigit(*it)) ++it;
+	return !s.empty() && it == s.end();
+}
+
 int main() {
 	try {
 		const char* server_address{ "localhost" };
@@ -18,17 +25,25 @@ int main() {
 		const char* lf{ "\n" };
 		const char* crlf{ "\r\n" };
 		const std::string rootPath = "E:/datamirror/client";
-		bool finished = false;
+		int expectedRows = 1;
+		bool expectRowAmount = false;
 		asio::ip::tcp::iostream server{ server_address, server_port };
 		if (!server) throw std::runtime_error("could not connect to server");
 
 		while (server) {
 			std::string resp;
-			while (!finished) {
+			while (expectedRows > 0) {
 				if (getline(server, resp)) {
 					if (resp.substr(resp.length() - 1, 1) == "\r") {
 						resp.erase(resp.end() - 1); // remove '\r'
-						finished = true;
+						expectedRows--;;
+						if (expectRowAmount) {
+							if (is_number(resp)) {
+								expectedRows = std::stoi(resp);
+							}
+							expectRowAmount = false;
+						}
+
 					}
 					
 					std::cout << resp << lf;
@@ -37,7 +52,8 @@ int main() {
 				}
 				
 			}
-
+			expectedRows = 1;
+			expectRowAmount = false;
 			std::cout << prompt;
 			std::string req;
 			if (getline(std::cin, req)) {
@@ -48,6 +64,8 @@ int main() {
 						req += crlf;
 						req += par1;
 					}
+					expectRowAmount = true;
+
 				}else if (req == "mkdir") {
 					std::string par1;
 					std::string par2;
@@ -91,7 +109,8 @@ int main() {
 						req += par1;
 					}
 				}
-				finished = false;
+
+				//finished = false;
 				server << req << crlf;
 			}
 		}

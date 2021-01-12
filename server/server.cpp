@@ -57,7 +57,7 @@ void get(const std::string& path, asio::ip::tcp::iostream& client) {
     }
     try
     {
-        client << std::to_string(std::filesystem::file_size(fullPath)) << lf;
+        client << std::to_string(std::filesystem::file_size(fullPath)) << crlf;
         std::ifstream input(fullPath, std::ios::binary);
         std::copy(
             std::istreambuf_iterator<char>(input),
@@ -206,18 +206,16 @@ void dir(asio::ip::tcp::iostream& client, const std::string& path) {
             filesize = std::to_string(dirEntry.file_size());
         }
         resultString += filesize + "";
-        resultString += lf;
+        resultString += crlf;
     }
     }
     catch (const std::exception& ex) {
         client << "Error: failed" << crlf;
         return;
     }
-    std::string prefix = "items found: " + std::to_string(counter) + lf;
-    resultString = prefix + resultString;
-    //remove last newline
-    resultString.erase(resultString.end() - 1);
-    client << resultString << crlf;
+
+    client << std::to_string(counter) << crlf;
+    client << resultString;
     return;
 }
 

@@ -41,6 +41,42 @@ std::time_t to_time_t(TP tp)
     return system_clock::to_time_t(sctp);
 }
 
+
+void put(const std::string& path, const std::string& size, asio::ip::tcp::iostream& client) {
+    std::string fullPath = rootPath;
+
+    if (path != "" && path.substr(0, 1) != ".") {
+        fullPath = rootPath + "/" + path;
+    }
+    else {
+        client << "Error: Permission denied" << crlf;
+        return;
+    }
+
+    try
+    {
+        int byteAmount = std::stoi(size) + 1;
+        char* buffer = new char[byteAmount];
+        byteAmount--;
+        buffer[byteAmount] = '\0';
+
+        client.read(buffer, byteAmount);
+
+        std::ofstream ofs;
+        ofs.open(rootPath + "/" + path);
+        ofs << buffer;
+        ofs.close();
+
+        client << "OK" << crlf;
+
+    }
+    catch (const std::exception& e)
+    {
+        client << "Error: Failed to get file" << crlf;
+        return;
+    }
+}
+
 void get(const std::string& path, asio::ip::tcp::iostream& client) {
     std::string fullPath = rootPath;
 
@@ -222,8 +258,6 @@ void dir(asio::ip::tcp::iostream& client, const std::string& path) {
 int main() {
     try {
 
-
-
         asio::io_context io_context;
         asio::ip::tcp::acceptor server{ io_context, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), server_port) };
         for (;;) {
@@ -234,57 +268,64 @@ int main() {
             client << "Welcome to AvanSync server 1.0" << crlf;
                 for (;;) {
                     std::string request;
-                    getline(client, request);
-                    request.erase(request.end() - 1); // remove '\r'
-                    //if (request.substr(request.length() - 1, 1) == "\r") {
-                    //    request.erase(request.end() - 1); // remove '\r'
-                    //    finished = true;
-                    //}
+                    if (getline(client, request)) {
+                        request.erase(request.end() - 1); // remove '\r'
 
-                    std::cerr << "client says: " << request << lf;
+                        std::cerr << "client says: " << request << lf;
 
-                    if (request == "quit") {
-                        client << "Bye." << crlf;
-                        std::cerr << "will disconnect from client " << client.socket().local_endpoint() << lf;
-                        break;
-                    }else if (request == "info") {
-                        client << "Data Mirror server 1.0, copyright (c) 2021 Chiel Arts." << crlf;
-                    }
-                    else if (request == "dir") {
-                        getline(client, request);
-                        request.erase(request.end() - 1);
-                        dir(client, request);
-                    }
-                    else if (request == "mkdir") {
-                        getline(client, request);
-                        request.erase(request.end() - 1);
-                        std::string parent = request;
-                        getline(client, request);
-                        request.erase(request.end() - 1);
-                        std::string dirname = request;
-                        mkdir(client, parent, dirname);
-                    }
-                    else if (request == "ren") {
-                        getline(client, request);
-                        request.erase(request.end() - 1);
-                        std::string path = request;
-                        getline(client, request);
-                        request.erase(request.end() - 1);
-                        std::string newname = request;
-                        ren(client, path, newname);
-                    }
-                    else if (request == "del") {
-                        getline(client, request);
-                        request.erase(request.end() - 1);
-                        del(client, request);
-                    }
-                    else if (request == "get") {
-                        getline(client, request);
-                        request.erase(request.end() - 1);
-                        get(request, client);
-                    }
-                    else {
-                        client << request << crlf; // simply echo the request
+                        if (request == "quit") {
+                            client << "Bye." << crlf;
+                            std::cerr << "will disconnect from client " << client.socket().local_endpoint() << lf;
+                            break;
+                        }
+                        else if (request == "info") {
+                            client << "Data Mirror server 1.0, copyright (c) 2021 Chiel Arts." << crlf;
+                        }
+                        else if (request == "dir") {
+                            getline(client, request);
+                            request.erase(request.end() - 1);
+                            dir(client, request);
+                        }
+                        else if (request == "mkdir") {
+                            getline(client, request);
+                            request.erase(request.end() - 1);
+                            std::string parent = request;
+                            getline(client, request);
+                            request.erase(request.end() - 1);
+                            std::string dirname = request;
+                            mkdir(client, parent, dirname);
+                        }
+                        else if (request == "ren") {
+                            getline(client, request);
+                            request.erase(request.end() - 1);
+                            std::string path = request;
+                            getline(client, request);
+                            request.erase(request.end() - 1);
+                            std::string newname = request;
+                            ren(client, path, newname);
+                        }
+                        else if (request == "del") {
+                            getline(client, request);
+                            request.erase(request.end() - 1);
+                            del(client, request);
+                        }
+                        else if (request == "get") {
+                            getline(client, request);
+                            request.erase(request.end() - 1);
+                            get(request, client);
+                        }
+                        else if (request == "put") {
+                            getline(client, request);
+                            request.erase(request.end() - 1);
+                            std::string path = request;
+                            getline(client, request);
+                            request.erase(request.end() - 1);
+                            std::string size = request;
+                            put(path, size, client);
+                        }
+                        else {
+                            client << request << crlf; // simply echo the request
+                        }
                     }
             }
             

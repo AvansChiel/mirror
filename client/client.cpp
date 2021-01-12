@@ -9,26 +9,66 @@
 #include <string>
 #include <stdexcept>
 #include <asio.hpp>
+#include <filesystem>
 #include <fstream>
+
+const char* server_address{ "localhost" };
+const char* server_port{ "12345" };
+const char* prompt{ "avansync> " };
+const char* lf{ "\n" };
+const char* crlf{ "\r\n" };
+const std::string rootPath = "E:/datamirror/client";
+int expectedRows = 1;
+bool expectRowAmount = false;
+bool receiveFile = false;
+std::string writePath = "";
+std::string sendPath = "";
+
 bool is_number(const std::string& s)
 {
 	std::string::const_iterator it = s.begin();
 	while (it != s.end() && std::isdigit(*it)) ++it;
 	return !s.empty() && it == s.end();
+
+
+}
+
+void sendFileToServer(asio::ip::tcp::iostream& server) {
+	if (sendPath.substr(0, 1) == "." || sendPath.substr(0, 1) == "/") {
+		std::cout << "Error: Permission denied" << lf;
+		return;
+	}
+	if (!std::filesystem::exists(rootPath + "/" + sendPath)) {
+		std::cout << "Error: file not found" << lf;
+		return;
+	}
+
+	try
+	{
+		server << "put" << crlf;
+		server << sendPath << crlf;
+		server << std::filesystem::file_size(rootPath + "/" + sendPath) << crlf;
+		std::ifstream input(rootPath + "/" + sendPath, std::ios::binary);
+		std::copy(
+			std::istreambuf_iterator<char>(input),
+			std::istreambuf_iterator<char>(),
+			std::ostreambuf_iterator<char>(server));
+
+		server << crlf;
+
+		sendPath = "";
+
+	}
+	catch (const std::exception& e)
+	{
+		server << "Error: Failed to get file" << crlf;
+		return;
+	}
 }
 
 int main() {
 	try {
-		const char* server_address{ "localhost" };
-		const char* server_port{ "12345" };
-		const char* prompt{ "avansync> " };
-		const char* lf{ "\n" };
-		const char* crlf{ "\r\n" };
-		const std::string rootPath = "E:/datamirror/client";
-		int expectedRows = 1;
-		bool expectRowAmount = false;
-		bool receiveFile = false;
-		std::string writePath = "";
+		
 		asio::ip::tcp::iostream server{ server_address, server_port };
 		if (!server) throw std::runtime_error("could not connect to server");
 
@@ -50,11 +90,11 @@ int main() {
 						ofs.open(rootPath + "/" +  writePath);
 						ofs << buffer;	
 						ofs.close();
-
+						//expectedRows
 						writePath = "";
 					}
 				}
-				else if (getline(server, resp)) {
+				if (getline(server, resp)) {
 					resp.erase(resp.end() - 1); // remove '\r'
 					expectedRows--;;
 					if (expectRowAmount) {
@@ -126,11 +166,19 @@ int main() {
 						req += par1;
 					}
 					writePath = par1;
-
 				}
-
-				//finished = false;
-				server << req << crlf;
+				else if (req == "put") {
+					std::string path;
+					std::cout << "type path:";
+					if (getline(std::cin, path)) {
+						sendPath = path;
+						sendFileToServer(server);
+						req = "";
+					}
+				}
+				if (req != "") {
+					server << req << crlf;
+				}
 			}
 		}
 

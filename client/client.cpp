@@ -83,6 +83,14 @@ int main() {
 						req += par1;
 					}
 				}
+				else if (req == "get") {
+					std::string par1;
+					std::cout << "type path:";
+					if (getline(std::cin, par1)) {
+						req += crlf;
+						req += par1;
+					}
+				}
 				finished = false;
 				server << req << crlf;
 			}

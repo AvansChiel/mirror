@@ -10,26 +10,27 @@
 #include <stdexcept>
 #include <asio.hpp>
 #include <filesystem>
+#include <fstream>
 
 const std::string rootPath = "E:/datamirror/server";
 const int server_port{ 12345 };
 const char* lf{ "\n" };
 const char* crlf{ "\r\n" };
-
-template<typename T>
-std::string toString(const T& t) {
-    std::ostringstream oss;
-    oss << t;
-    return oss.str();
-}
-
-template<typename T>
-T fromString(const std::string& s) {
-    std::istringstream stream(s);
-    T t;
-    stream >> t;
-    return t;
-}
+//
+//template<typename T>
+//std::string toString(const T& t) {
+//    std::ostringstream oss;
+//    oss << t;
+//    return oss.str();
+//}
+//
+//template<typename T>
+//T fromString(const std::string& s) {
+//    std::istringstream stream(s);
+//    T t;
+//    stream >> t;
+//    return t;
+//}
 
 template <typename TP>
 std::time_t to_time_t(TP tp)
@@ -38,6 +39,44 @@ std::time_t to_time_t(TP tp)
     auto sctp = time_point_cast<system_clock::duration>(tp - TP::clock::now()
         + system_clock::now());
     return system_clock::to_time_t(sctp);
+}
+
+std::string get(const std::string& path, asio::ip::tcp::iostream& client) {
+    std::string fullPath = rootPath;
+
+    if (path != "" && path.substr(0, 1) != ".") {
+        fullPath = rootPath + "/" + path;
+    }
+    else {
+        std::string returnString = "Error: permission denied!";
+        return returnString;
+    }
+    if (!std::filesystem::exists(fullPath)) {
+        std::string returnString = "Error: No such file or directory!";
+        return returnString;
+    }
+    try
+    {
+        std::string returnString = "";
+        std::string fileSize = std::to_string(std::filesystem::file_size(fullPath));
+        //returnString += fileSize + lf;
+        client << std::to_string(std::filesystem::file_size(fullPath)) << lf;
+        std::ifstream input(fullPath, std::ios::binary);
+        //std::ofstream output("C:\\myfile.gif", std::ios::binary);
+        std::copy(
+            std::istreambuf_iterator<char>(input),
+            std::istreambuf_iterator<char>(),
+            std::ostreambuf_iterator<char>(client));
+
+        client << crlf;
+
+        return returnString;
+    }
+    catch (const std::exception& e)
+    {
+        std::string returnString = "Error: Failed to remove";
+        return returnString;
+    }
 }
 
 std::string del(const std::string& path) {
@@ -243,6 +282,13 @@ int main() {
                         getline(client, request);
                         request.erase(request.end() - 1);
                         client << del(request) << crlf;
+                    }
+                    else if (request == "get") {
+                        getline(client, request);
+                        request.erase(request.end() - 1);
+                        get(request, client);
+                        //client <<  << crlf;
+                        //client << client.binary()
                     }
                     else {
                         client << request << crlf; // simply echo the request

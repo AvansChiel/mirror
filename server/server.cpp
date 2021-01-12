@@ -41,28 +41,24 @@ std::time_t to_time_t(TP tp)
     return system_clock::to_time_t(sctp);
 }
 
-std::string get(const std::string& path, asio::ip::tcp::iostream& client) {
+void get(const std::string& path, asio::ip::tcp::iostream& client) {
     std::string fullPath = rootPath;
 
     if (path != "" && path.substr(0, 1) != ".") {
         fullPath = rootPath + "/" + path;
     }
     else {
-        std::string returnString = "Error: permission denied!";
-        return returnString;
+        client << "Error: Permission denied" << crlf;
+        return;
     }
     if (!std::filesystem::exists(fullPath)) {
-        std::string returnString = "Error: No such file or directory!";
-        return returnString;
+        client << "Error: No such file or directory" << crlf;
+        return;
     }
     try
     {
-        std::string returnString = "";
-        std::string fileSize = std::to_string(std::filesystem::file_size(fullPath));
-        //returnString += fileSize + lf;
         client << std::to_string(std::filesystem::file_size(fullPath)) << lf;
         std::ifstream input(fullPath, std::ios::binary);
-        //std::ofstream output("C:\\myfile.gif", std::ios::binary);
         std::copy(
             std::istreambuf_iterator<char>(input),
             std::istreambuf_iterator<char>(),
@@ -70,97 +66,97 @@ std::string get(const std::string& path, asio::ip::tcp::iostream& client) {
 
         client << crlf;
 
-        return returnString;
     }
     catch (const std::exception& e)
     {
-        std::string returnString = "Error: Failed to remove";
-        return returnString;
+        client << "Error: Failed to get file" << crlf;
+        return;
     }
 }
 
-std::string del(const std::string& path) {
+void del(asio::ip::tcp::iostream& client, const std::string& path) {
     std::string fullPath = rootPath;
 
     if (path != "" && path.substr(0,1) != ".") {
         fullPath = rootPath + "/" + path;
     }
     else {
-        std::string returnString = "Error: permission denied!";
-        return returnString;
+        client << "Error: Permission denied" << crlf;
+        return;
     }
     if (!std::filesystem::exists(fullPath)) {
-        std::string returnString = "Error: No such file or directory!";
-        return returnString;
+        client << "Error: No Such file or diretory" << crlf;
+        return;
     }
     try
     {
-        
         std::filesystem::remove_all(fullPath);
-        std::string returnString = "OK";
-        return returnString;
+        client << "OK" << crlf;
+        return;
     }
     catch (const std::exception& e)
     {
-        std::string returnString = "Error: Failed to remove";
-        return returnString;
+                
+        client << "Error: Failed to remove" << crlf;
+        return;
     }
 }
 
-std::string ren(const std::string& path, const std::string& newname) {
+void ren(asio::ip::tcp::iostream& client, const std::string& path, const std::string& newname) {
     std::string fullPath = rootPath;
     if (path != "" && path != ".") {
         fullPath = rootPath + "/" + path;
     }
     if (newname == "" || newname == ".") {
-        std::string returnString = "Error: Invalid directory name!";
-        return returnString;
+        client << "Error: Invalid directory name" << crlf;
+        return;
     }
     if (!std::filesystem::exists(fullPath)) {
-        std::string returnString = "Error: No such directory!";
-        return returnString;
+        client << "Error: No Such file or diretory" << crlf;
+        return;
     }
     try
     {
         std::string newPath = fullPath.substr(0, (fullPath.find_last_of("/")) + 1) +  newname;
         std::filesystem::rename(fullPath, newPath);
-        std::string returnString = "OK";
-        return returnString;
+        client << "OK" << crlf;
+        return;
     }
     catch (const std::exception& e)
     {
-        std::string returnString = "Error: Failed to create directory";
-        return returnString;
+        client << "Error: Failed to rename" << crlf;
+        return;
     }
 }
 
-std::string mkdir(const std::string& path, const std::string& dirname) {
+void mkdir(asio::ip::tcp::iostream& client, const std::string& path, const std::string& dirname) {
     std::string fullPath = rootPath;
     if (path != "" && path != ".") {
         fullPath = rootPath + "/" + path;
     }
     if (dirname == "" || dirname == ".") {
-        std::string returnString = "Error: Invalid directory name!";
-        return returnString;
+        client << "Error: No Permission" << crlf;
+        return;
     }
     if (!std::filesystem::exists(fullPath)) {
-        std::string returnString = "Error: No such directory!";
-        return returnString;
+        client << "Error: Directory does not exist" << crlf;
+        return;
     }
     try
     {
         std::filesystem::create_directory(fullPath + "/" + dirname);
-        std::string returnString = "OK";
-        return returnString;
+        client << "OK" << crlf;
+        return;
     }
     catch (const std::exception&)
     {
-        std::string returnString = "Error: Failed to create directory";
-        return returnString;
+        client << "Error: Failed to create directory" << crlf;
+
+        return;
     }
 }
 
-std::string dir(const std::string& path) {
+void dir(asio::ip::tcp::iostream& client, const std::string& path) {
     using directory_iterator = std::filesystem::directory_iterator;
     std::string resultString = "";
     int counter = 0;
@@ -169,8 +165,8 @@ std::string dir(const std::string& path) {
         fullPath = rootPath + "/" + path;
     }
     if (!std::filesystem::exists(fullPath)) {
-        std::string returnString = "Error: No such directory!";
-        return returnString;
+        client << "Error: Directory does not exist" << crlf;
+        return;
     }
     try {
 
@@ -214,14 +210,15 @@ std::string dir(const std::string& path) {
     }
     }
     catch (const std::exception& ex) {
-        std::string returnString = "Error: No such directory!";
-        return returnString;
+        client << "Error: failed" << crlf;
+        return;
     }
     std::string prefix = "items found: " + std::to_string(counter) + lf;
     resultString = prefix + resultString;
     //remove last newline
     resultString.erase(resultString.end() - 1);
-    return resultString;
+    client << resultString << crlf;
+    return;
 }
 
 int main() {
@@ -258,7 +255,7 @@ int main() {
                     else if (request == "dir") {
                         getline(client, request);
                         request.erase(request.end() - 1);
-                        client << dir(request) << crlf;
+                        dir(client, request);
                     }
                     else if (request == "mkdir") {
                         getline(client, request);
@@ -267,7 +264,7 @@ int main() {
                         getline(client, request);
                         request.erase(request.end() - 1);
                         std::string dirname = request;
-                        client << mkdir(parent, dirname) << crlf;
+                        mkdir(client, parent, dirname);
                     }
                     else if (request == "ren") {
                         getline(client, request);
@@ -276,19 +273,17 @@ int main() {
                         getline(client, request);
                         request.erase(request.end() - 1);
                         std::string newname = request;
-                        client << ren(path, newname) << crlf;
+                        ren(client, path, newname);
                     }
                     else if (request == "del") {
                         getline(client, request);
                         request.erase(request.end() - 1);
-                        client << del(request) << crlf;
+                        del(client, request);
                     }
                     else if (request == "get") {
                         getline(client, request);
                         request.erase(request.end() - 1);
                         get(request, client);
-                        //client <<  << crlf;
-                        //client << client.binary()
                     }
                     else {
                         client << request << crlf; // simply echo the request

@@ -35,10 +35,14 @@ bool is_number(const std::string& s)
 
 void sendFileToServer(asio::ip::tcp::iostream& server) {
 	if (sendPath.substr(0, 1) == "." || sendPath.substr(0, 1) == "/") {
+		expectedRows = 0;
+
 		std::cout << "Error: Permission denied" << lf;
 		return;
 	}
 	if (!std::filesystem::exists(rootPath + "/" + sendPath)) {
+		expectedRows = 0;
+
 		std::cout << "Error: file not found" << lf;
 		return;
 	}
@@ -49,13 +53,13 @@ void sendFileToServer(asio::ip::tcp::iostream& server) {
 		server << sendPath << crlf;
 		server << std::filesystem::file_size(rootPath + "/" + sendPath) << crlf;
 		std::ifstream input(rootPath + "/" + sendPath, std::ios::binary);
-		std::copy(
-			std::istreambuf_iterator<char>(input),
-			std::istreambuf_iterator<char>(),
-			std::ostreambuf_iterator<char>(server));
+		std::string reply;
+		char buf[512];
+		while (input.read(buf, sizeof(buf)).gcount() > 0)
+			reply.append(buf, input.gcount());
 
-		server << crlf;
-
+		server << reply;
+		expectedRows = 1;
 		sendPath = "";
 
 	}
@@ -91,12 +95,13 @@ int main() {
 						ofs << buffer;	
 						ofs.close();
 						//expectedRows
+						expectedRows--;
+						//getline(server, resp);
 						writePath = "";
 					}
-				}
-				if (getline(server, resp)) {
+				} else if (getline(server, resp)) {
 					resp.erase(resp.end() - 1); // remove '\r'
-					expectedRows--;;
+					expectedRows--;
 					if (expectRowAmount) {
 						if (is_number(resp)) {
 							expectedRows = std::stoi(resp);
@@ -173,10 +178,12 @@ int main() {
 					if (getline(std::cin, path)) {
 						sendPath = path;
 						sendFileToServer(server);
-						req = "";
+						//req = "";
 					}
+
+					//getline(server, path);
 				}
-				if (req != "") {
+				if (req != "put") {
 					server << req << crlf;
 				}
 			}

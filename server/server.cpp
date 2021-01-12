@@ -95,12 +95,12 @@ void get(const std::string& path, asio::ip::tcp::iostream& client) {
     {
         client << std::filesystem::file_size(fullPath) << crlf;
         std::ifstream input(fullPath, std::ios::binary);
-        std::copy(
-            std::istreambuf_iterator<char>(input),
-            std::istreambuf_iterator<char>(),
-            std::ostreambuf_iterator<char>(client));
+        std::string reply;
+        char buf[512];
+        while (input.read(buf, sizeof(buf)).gcount() > 0)
+            reply.append(buf, input.gcount());
 
-        client << crlf;
+        client << reply;
 
     }
     catch (const std::exception& e)

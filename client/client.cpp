@@ -11,6 +11,7 @@
 #include <asio.hpp>
 #include <filesystem>
 #include <fstream>
+#include "Directory.h"
 
 const char* server_address{ "localhost" };
 const char* server_port{ "12345" };
@@ -26,6 +27,16 @@ std::string sendPath = "";
 std::string req;
 
 
+
+template <typename TP>
+std::time_t to_time_t(TP tp)
+{
+	using namespace std::chrono;
+	auto sctp = time_point_cast<system_clock::duration>(tp - TP::clock::now()
+		+ system_clock::now());
+	return system_clock::to_time_t(sctp);
+}
+
 bool is_number(const std::string& s)
 {
 	std::string::const_iterator it = s.begin();
@@ -33,6 +44,15 @@ bool is_number(const std::string& s)
 	return !s.empty() && it == s.end();
 
 
+}
+
+std::time_t getDateTimeFromString(std::string datetime) {
+	const std::string temp = datetime;
+	struct std::tm tm;
+	std::stringstream ss(datetime);
+	ss >> std::get_time(&tm, "%d-%m-%Y %H:%M:%S");
+	std::time_t time = mktime(&tm);
+	return time;
 }
 
 void sendFileToServer(asio::ip::tcp::iostream& server) {
@@ -70,27 +90,33 @@ void sendFileToServer(asio::ip::tcp::iostream& server) {
 	}
 }
 
-std::string put(asio::ip::tcp::iostream& server) {
+std::string put(asio::ip::tcp::iostream& server, std::string path = "") {
 	std::string resp;
 	bool done = false;
-	std::string path;
-	std::cout << "type path:";
-	if (getline(std::cin, path)) {
-		sendPath = path;
-		//sendFileToServer(server);
-		//req = "";
+	std::string filepath;
+	if (path == "") {
+		std::cout << "type path:";
+		if (getline(std::cin, filepath)) {
+			//sendPath = filepath;
+			//sendFileToServer(server);
+			//req = "";
+		}
+
+	}
+	else {
+		filepath = path;
 	}
 
-	if (sendPath.substr(0, 1) == "." || sendPath.substr(0, 1) == "/") {
+	if (filepath.substr(0, 1) == "." || filepath.substr(0, 1) == "/") {
 		return "Error: Permission denied";
 	}
-	if (!std::filesystem::exists(rootPath + "/" + sendPath)) {
+	if (!std::filesystem::exists(rootPath + "/" + filepath)) {
 		return "Error: file not found";
 	}
 
 
-	server << "put" << crlf << sendPath << crlf << std::filesystem::file_size(rootPath + "/" + sendPath) << crlf;
-	std::ifstream input(rootPath + "/" + sendPath, std::ios::binary);
+	server << "put" << crlf << filepath << crlf << std::filesystem::file_size(rootPath + "/" + filepath) << crlf;
+	std::ifstream input(rootPath + "/" + filepath, std::ios::binary);
 	std::string reply;
 	char buf[512];
 	while (input.read(buf, sizeof(buf)).gcount() > 0)
@@ -189,22 +215,32 @@ std::string ren(asio::ip::tcp::iostream& server) {
 	return resp;
 }
 
-std::vector<std::string> dir(asio::ip::tcp::iostream& server) {
+std::vector<std::string> dir(asio::ip::tcp::iostream& server, std::string path = "") {
 	std::string resp;
 	bool done = false;
-	std::string par1;
-	std::cout << "type path:";
+	std::string pathparam;
 	int linesAmount = 0;
 	std::vector<std::string> records;
-	if (getline(std::cin, par1)) {
-		//req += crlf;
-		//req += par1;
+
+	if (path == "") {
+		std::string par1;
+		std::cout << "type path:";
+		if (getline(std::cin, pathparam)) {
+			//req += crlf;
+			//req += par1;
+		}
 	}
-	server << "dir" << crlf << par1 << crlf;
+	else {
+		pathparam = path;
+	}
+	server << "dir" << crlf << pathparam << crlf;
 	while (!done) {
 		if (getline(server, resp)) {
 			resp.erase(resp.end() - 1);
-
+			if (!is_number(resp)) {
+				std::cout << resp << lf;
+				return records;
+			}
 			linesAmount = std::stoi(resp);
 			while (linesAmount > 0) {
 				if (getline(server, resp)) {
@@ -219,22 +255,29 @@ std::vector<std::string> dir(asio::ip::tcp::iostream& server) {
 	return records;
 }
 
-std::string mkdir(asio::ip::tcp::iostream& server) {
+std::string mkdir(asio::ip::tcp::iostream& server, std::string path = "") {
 	std::string resp;
 	bool done = false;
 	std::string par1;
 	std::string par2;
-	std::cout << "type path:";
-	if (getline(std::cin, par1)) {
-		//req += crlf;
-		req += par1;
+	if (path == "") {
+		std::cout << "type path:";
+		if (getline(std::cin, par1)) {
+			//req += crlf;
+			//req += par1;
+		}
+		std::cout << "type new dirname:";
+		if (getline(std::cin, par2)) {
+			//req += crlf;
+			//req += par2;
+		}
+		server << "mkdir" << crlf << par1 << crlf << par2 << crlf;
 	}
-	std::cout << "type new dirname:";
-	if (getline(std::cin, par2)) {
-		//req += crlf;
-		req += par2;
+	else {
+		std::string pathPart = path.substr(0, path.find_last_of("/"));
+		std::string namePart = path.substr(path.find_last_of("/") + 1, path.length());
+		server << "mkdir" << crlf << pathPart << crlf << namePart << crlf;
 	}
-	server << "mkdir" << crlf << par1 << crlf << par2 << crlf;
 	while (!done) {
 		if (getline(server, resp)) {
 			resp.erase(resp.end() - 1);//remove r
@@ -257,13 +300,141 @@ std::string info(asio::ip::tcp::iostream& server) {
 	return resp;
 }
 
-void checkFolder(const std::string& path) {
+void checkServerFiles(asio::ip::tcp::iostream& server, const std::string& path, std::vector<File>& files ) {
+	std::string printString = "";
+	std::vector<std::string> filestructure = dir(server, path);
+	
+	for (int i = 0; i < filestructure.size(); i++) {
+		std::string record = filestructure[i];
+		std::string delimiter = "|";
+
+		std::string type = record.substr(0, record.find(delimiter));
+		record.erase(0, record.find(delimiter) + 1);
+		std::string filepath = record.substr(0, record.find(delimiter));
+		record.erase(0, record.find(delimiter) + 1);
+		std::string datetime = record.substr(0, record.find(delimiter));
+		record.erase(0, record.find(delimiter) + 1);
+		std::string filesize = record.substr(0, record.length());
+		record.erase(0, record.find(delimiter) + 1);
+
+		/*for (int j = 0; j < depth; j++) {
+			printString += "...";
+		}*/
+
+		//printString += type + "|" + filepath + "|" + datetime + "|" + filesize + crlf;
+		File file = { type, path + "/" +filepath, getDateTimeFromString(datetime), std::stoi(filesize) };
+		files.push_back(file);
+
+		if (type == "D") {
+			checkServerFiles(server, path + "/" + filepath, files);
+		}
+
+	}
 
 }
 
-void sync() {
+void checkLocalFiles(const std::string& rootpath, const std::string& path, std::vector<File>& files) {
+	using directory_iterator = std::filesystem::directory_iterator;
+
+	for (const auto& dirEntry : directory_iterator(rootPath + "/" + path)) {
+		std::string type;
+		std::string filepath;
+		std::time_t last_modified;
+		int size;
+
+		if (dirEntry.is_directory()) {
+			type = "D";
+		}
+		else if (dirEntry.is_regular_file()) {
+			type = "F";
+		}
+		else {
+			type = "*";
+		}
+		struct tm newTime;
+		last_modified = to_time_t<decltype(dirEntry.last_write_time())>(dirEntry.last_write_time());
+		filepath = dirEntry.path().filename().string();
+
+
+		if (dirEntry.file_size() < 0) {
+			size = 0;
+		}
+		else {
+			size = dirEntry.file_size();
+		}
+		File file = { type, path + "/" + filepath, last_modified, size };
+		files.push_back(file);
+
+		if (type == "D") {
+			checkLocalFiles(rootPath, path + "/" + filepath, files);
+		}
+	}
+
+
+}
+
+void sync(asio::ip::tcp::iostream& server) {
 	//find files in own space
-	checkFolder(rootPath);
+	std::vector<File> serverFiles;
+	std::vector<File> localFiles;
+	//std::vector<File> mkdirQueue;
+	std::vector<File> putQueue;
+	std::vector<File> deleteQueue;
+	checkServerFiles(server, ".", serverFiles);
+	checkLocalFiles(rootPath, ".", localFiles);
+
+	//loop through local files
+	for (int i = 0; i < localFiles.size(); i++) {
+		bool found = false;
+		//loop through server files
+		for (int j = 0; j < serverFiles.size(); j++) {
+			//if file found on both
+			if (localFiles[i].path == serverFiles[j].path) {
+				found = true;
+				//check if client is newer
+				if (localFiles[i].lastModified > serverFiles[j].lastModified) {
+					//if newer put in queue to update
+					putQueue.push_back(localFiles[i]);
+				}
+			}
+		}
+		//if local file not on server, put in queue to send it;
+		if (!found) {
+			putQueue.push_back(localFiles[i]);
+		}
+	}
+
+	//loop through server files
+	for (int x = 0; x < serverFiles.size(); x++) {
+		bool found = false;
+		//loop through server files
+		for (int y = 0; y < localFiles.size(); y++) {
+			//if file found on both
+			if (localFiles[y].path == serverFiles[x].path) {
+				found = true;
+				
+			}
+		}
+		//if local file not on server, put in queue to send it;
+		if (!found) {
+			deleteQueue.push_back(serverFiles[x]);
+		}
+	}
+
+	for (File f : putQueue) {
+		if (f.type == "D") {
+			mkdir(server, f.path);
+		}
+		/*else {
+			put(server, f.path);
+		}*/
+	}
+
+	//for (File f : deleteQueue) {
+	//	del()
+	//}
+
+	std::cout << "done finding files" << lf;
 
 }
 
@@ -306,6 +477,9 @@ int main() {
 				}
 				else if (req == "info") {
 					std::cout << info(server) << lf;
+				}
+				else if (req == "sync") {
+					sync(server);
 				}
 				
 			}

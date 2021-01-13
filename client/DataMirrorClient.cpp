@@ -1,7 +1,7 @@
 #include "DataMirrorClient.h"
 
 template <typename TP>
-const std::time_t DataMirrorClient::to_time_t(TP tp)
+const std::time_t DataMirrorClient::to_time_t(const TP& tp)
 {
 	using namespace std::chrono;
 	auto sctp = time_point_cast<system_clock::duration>(tp - TP::clock::now()
@@ -16,7 +16,7 @@ bool DataMirrorClient::isNumber(const std::string& s)
 	return !s.empty() && it == s.end();
 }
 
-const std::time_t DataMirrorClient::getDateTimeFromString(std::string datetime) {
+const std::time_t DataMirrorClient::getDateTimeFromString(const std::string& datetime) {
 	const std::string temp = datetime;
 	struct std::tm tm;
 	std::stringstream ss(datetime);
@@ -25,7 +25,7 @@ const std::time_t DataMirrorClient::getDateTimeFromString(std::string datetime) 
 	return time;
 }
 
-const std::string DataMirrorClient::put(asio::ip::tcp::iostream& server, std::string path) {
+const std::string DataMirrorClient::put(asio::ip::tcp::iostream& server, const std::string& path) {
 	std::string resp;
 	bool done = false;
 	std::string filepath;
@@ -38,6 +38,7 @@ const std::string DataMirrorClient::put(asio::ip::tcp::iostream& server, std::st
 		if (!std::filesystem::exists(rootPath + "/" + filepath)) {
 			return "Error: file not found";
 		}
+		
 
 	}
 	else {
@@ -54,7 +55,6 @@ const std::string DataMirrorClient::put(asio::ip::tcp::iostream& server, std::st
 
 	server.write(buffer.data(), fileSize);
 
-	//server << reply;
 	while (!done) {
 		if (getline(server, resp)) {
 			resp.erase(resp.end() - 1);
@@ -71,7 +71,11 @@ void DataMirrorClient::get(asio::ip::tcp::iostream& server) {
 	std::string par1;
 	std::cout << "type path:";
 	getline(std::cin, par1);
-
+	std::string fullPath = rootPath + "/" + par1;
+	if (!std::filesystem::is_directory(fullPath.substr(0, fullPath.find_last_of('/')))) {
+		std::cout << "Error: invalid path" << lf;
+		return;
+	}
 	server << "get" << crlf << par1 << crlf;
 	while (!done) {
 		if (getline(server, resp)) {
@@ -92,10 +96,9 @@ void DataMirrorClient::get(asio::ip::tcp::iostream& server) {
 
 		}
 	}
-	std::cout << "file received" << lf;
 }
 
-const std::string DataMirrorClient::del(asio::ip::tcp::iostream& server, std::string path) {
+const std::string DataMirrorClient::del(asio::ip::tcp::iostream& server, const std::string& path) {
 	bool done = false;
 	std::string resp;
 	std::string par1;
@@ -139,7 +142,7 @@ const std::string DataMirrorClient::ren(asio::ip::tcp::iostream& server) {
 	return resp;
 }
 
-const std::vector<std::string> DataMirrorClient::dir(asio::ip::tcp::iostream& server, std::string path) {
+const std::vector<std::string> DataMirrorClient::dir(asio::ip::tcp::iostream& server, const std::string& path) {
 	std::string resp;
 	bool done = false;
 	std::string pathparam;
@@ -176,7 +179,7 @@ const std::vector<std::string> DataMirrorClient::dir(asio::ip::tcp::iostream& se
 	return records;
 }
 
-const std::string DataMirrorClient::mkdir(asio::ip::tcp::iostream& server, std::string path) {
+const std::string DataMirrorClient::mkdir(asio::ip::tcp::iostream& server, const std::string& path) {
 	std::string resp;
 	bool done = false;
 	std::string par1;
@@ -298,10 +301,10 @@ void DataMirrorClient::sync(asio::ip::tcp::iostream& server) {
 		//loop through server files
 		for (int j = 0; j < serverFiles.size(); j++) {
 			//if file found on both
-			if (localFiles[i].path == serverFiles[j].path) {
+			if (localFiles[i].path() == serverFiles[j].path()) {
 				found = true;
 				//check if client is newer
-				if (localFiles[i].lastModified > serverFiles[j].lastModified) {
+				if (localFiles[i].lastModified() > serverFiles[j].lastModified()) {
 					//if newer put in queue to update
 					putQueue.push_back(localFiles[i]);
 				}
@@ -319,7 +322,7 @@ void DataMirrorClient::sync(asio::ip::tcp::iostream& server) {
 		//loop through server files
 		for (int y = 0; y < localFiles.size(); y++) {
 			//if file found on both
-			if (localFiles[y].path == serverFiles[x].path) {
+			if (localFiles[y].path() == serverFiles[x].path()) {
 				found = true;
 
 			}
@@ -332,17 +335,17 @@ void DataMirrorClient::sync(asio::ip::tcp::iostream& server) {
 
 	//create or overwrite file/directory's in the putqueue
 	for (File f : putQueue) {
-		if (f.type == "D") {
-			mkdir(server, f.path);
+		if (f.type() == "D") {
+			mkdir(server, f.path());
 		}
 		else {
-			put(server, f.path);
+			put(server, f.path());
 		}
 	}
 
 	//delete files or directories in the deletequeue
 	for (int k = deleteQueue.size() - 1; k >= 0; k--) {
-		del(server, deleteQueue[k].path);
+		del(server, deleteQueue[k].path());
 	}
 	std::cout << "Done Syncing" << lf;
 }

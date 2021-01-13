@@ -96,7 +96,7 @@ void DataMirrorServer::startLoop()
 }
 
 template <typename TP>
-const std::time_t DataMirrorServer::to_time_t(TP tp)
+const std::time_t DataMirrorServer::to_time_t(const TP& tp)
 {
     using namespace std::chrono;
     auto sctp = time_point_cast<system_clock::duration>(tp - TP::clock::now()
@@ -115,7 +115,10 @@ void DataMirrorServer::put(const std::string& path, const std::string& size, asi
         client << "Error: Permission denied" << crlf;
         return;
     }
-
+    if (!std::filesystem::is_directory(fullPath.substr(0, fullPath.find_last_of('/')))) {
+        client << "Error: invalid path" << crlf;
+        return;
+    }
     std::filesystem::space_info info = std::filesystem::space(rootPath);
     if (std::stoi(size) > info.available) {
         client << "Error: Not enough space available" << crlf;
@@ -216,6 +219,10 @@ void DataMirrorServer::ren(asio::ip::tcp::iostream& client, const std::string& p
         client << "Error: Invalid directory name" << crlf;
         return;
     }
+    if (path.substr(0, 3) == "../") {
+        client << "Error: Permission denied" << crlf;
+        return;
+    }
     if (!std::filesystem::exists(fullPath)) {
         client << "Error: No Such file or diretory" << crlf;
         return;
@@ -240,7 +247,11 @@ void DataMirrorServer::mkdir(asio::ip::tcp::iostream& client, const std::string&
         fullPath = rootPath + "/" + path;
     }
     if (dirname == "" || dirname == ".") {
-        client << "Error: No Permission" << crlf;
+        client << "Error: Specify a directory name" << crlf;
+        return;
+    }
+    if (path.substr(0, 3) == "../") {
+        client << "Error: Permission denied" << crlf;
         return;
     }
     if (!std::filesystem::exists(fullPath)) {

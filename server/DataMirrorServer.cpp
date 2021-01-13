@@ -83,7 +83,7 @@ void DataMirrorServer::startLoop()
 }
 
 template <typename TP>
-std::time_t DataMirrorServer::to_time_t(TP tp)
+const std::time_t DataMirrorServer::to_time_t(TP tp)
 {
     using namespace std::chrono;
     auto sctp = time_point_cast<system_clock::duration>(tp - TP::clock::now()

@@ -1,7 +1,7 @@
 #include "DataMirrorClient.h"
 
 template <typename TP>
-std::time_t DataMirrorClient::to_time_t(TP tp)
+const std::time_t DataMirrorClient::to_time_t(TP tp)
 {
 	using namespace std::chrono;
 	auto sctp = time_point_cast<system_clock::duration>(tp - TP::clock::now()
@@ -16,7 +16,7 @@ bool DataMirrorClient::isNumber(const std::string& s)
 	return !s.empty() && it == s.end();
 }
 
-std::time_t DataMirrorClient::getDateTimeFromString(std::string datetime) {
+const std::time_t DataMirrorClient::getDateTimeFromString(std::string datetime) {
 	const std::string temp = datetime;
 	struct std::tm tm;
 	std::stringstream ss(datetime);
@@ -25,7 +25,7 @@ std::time_t DataMirrorClient::getDateTimeFromString(std::string datetime) {
 	return time;
 }
 
-std::string DataMirrorClient::put(asio::ip::tcp::iostream& server, std::string path) {
+const std::string DataMirrorClient::put(asio::ip::tcp::iostream& server, std::string path) {
 	std::string resp;
 	bool done = false;
 	std::string filepath;
@@ -76,8 +76,8 @@ void DataMirrorClient::get(asio::ip::tcp::iostream& server) {
 	std::string par1;
 	std::cout << "type path:";
 	if (getline(std::cin, par1)) {
-		req += crlf;
-		req += par1;
+		//req += crlf;
+		//req += par1;
 	}
 
 	server << "get" << crlf << par1 << crlf;
@@ -103,15 +103,15 @@ void DataMirrorClient::get(asio::ip::tcp::iostream& server) {
 	std::cout << "file received" << lf;
 }
 
-std::string DataMirrorClient::del(asio::ip::tcp::iostream& server, std::string path) {
+const std::string DataMirrorClient::del(asio::ip::tcp::iostream& server, std::string path) {
 	bool done = false;
 	std::string resp;
 	std::string par1;
 	if (path == "") {
 		std::cout << "type path:";
 		if (getline(std::cin, par1)) {
-			req += crlf;
-			req += par1;
+			//req += crlf;
+			//req += par1;
 		}
 	}
 	else {
@@ -131,20 +131,20 @@ std::string DataMirrorClient::del(asio::ip::tcp::iostream& server, std::string p
 	return resp;
 }
 
-std::string DataMirrorClient::ren(asio::ip::tcp::iostream& server) {
+const std::string DataMirrorClient::ren(asio::ip::tcp::iostream& server) {
 	std::string resp;
 	bool done = false;
 	std::string par1;
 	std::string par2;
 	std::cout << "type path to change:";
 	if (getline(std::cin, par1)) {
-		req += crlf;
-		req += par1;
+		//req += crlf;
+		//req += par1;
 	}
 	std::cout << "type new name:";
 	if (getline(std::cin, par2)) {
-		req += crlf;
-		req += par2;
+		//req += crlf;
+		//req += par2;
 	}
 	server << "ren" << crlf << par1 << crlf << par2 << crlf;
 	while (!done) {
@@ -156,7 +156,7 @@ std::string DataMirrorClient::ren(asio::ip::tcp::iostream& server) {
 	return resp;
 }
 
-std::vector<std::string> DataMirrorClient::dir(asio::ip::tcp::iostream& server, std::string path) {
+const std::vector<std::string> DataMirrorClient::dir(asio::ip::tcp::iostream& server, std::string path) {
 	std::string resp;
 	bool done = false;
 	std::string pathparam;
@@ -196,7 +196,7 @@ std::vector<std::string> DataMirrorClient::dir(asio::ip::tcp::iostream& server, 
 	return records;
 }
 
-std::string DataMirrorClient::mkdir(asio::ip::tcp::iostream& server, std::string path) {
+const std::string DataMirrorClient::mkdir(asio::ip::tcp::iostream& server, std::string path) {
 	std::string resp;
 	bool done = false;
 	std::string par1;
@@ -228,7 +228,7 @@ std::string DataMirrorClient::mkdir(asio::ip::tcp::iostream& server, std::string
 	return resp;
 }
 
-std::string DataMirrorClient::info(asio::ip::tcp::iostream& server) {
+const std::string DataMirrorClient::info(asio::ip::tcp::iostream& server) {
 	std::string resp;
 	bool done = false;
 	server << "info" << crlf;
@@ -381,7 +381,7 @@ void DataMirrorClient::startLoop()
 	asio::ip::tcp::iostream server{ server_address, server_port };
 	if (!server) throw std::runtime_error("could not connect to server");
 	bool first = true;
-
+	std::string req;
 	while (server) {
 		if (first) {
 			std::string welcome;

@@ -13,7 +13,7 @@ public:
 	void startLoop();
 private:
 	template <typename TP>
-	std::time_t to_time_t(TP tp);
+	const std::time_t to_time_t(TP tp);
 	void put(const std::string& path, const std::string& size, asio::ip::tcp::iostream& client);
 	void get(const std::string& path, asio::ip::tcp::iostream& client);
 	void del(asio::ip::tcp::iostream& client, const std::string& path);

@@ -14,16 +14,16 @@ public:
 	void startLoop();
 private:
 	template <typename TP>
-	std::time_t to_time_t(TP tp);
+	const std::time_t to_time_t(TP tp);
 	bool isNumber(const std::string& s);
-	std::time_t getDateTimeFromString(std::string datetime);
-	std::string put(asio::ip::tcp::iostream& server, std::string path = "");
+	const std::time_t getDateTimeFromString(std::string datetime);
+	const std::string put(asio::ip::tcp::iostream& server, std::string path = "");
 	void get(asio::ip::tcp::iostream& server);
-	std::string del(asio::ip::tcp::iostream& server, std::string path = "");
-	std::string ren(asio::ip::tcp::iostream& server);
-	std::vector<std::string> dir(asio::ip::tcp::iostream& server, std::string path = "");
-	std::string mkdir(asio::ip::tcp::iostream& server, std::string path = "");
-	std::string info(asio::ip::tcp::iostream& server);
+	const std::string del(asio::ip::tcp::iostream& server, std::string path = "");
+	const std::string ren(asio::ip::tcp::iostream& server);
+	const std::vector<std::string> dir(asio::ip::tcp::iostream& server, std::string path = "");
+	const std::string mkdir(asio::ip::tcp::iostream& server, std::string path = "");
+	const std::string info(asio::ip::tcp::iostream& server);
 	void checkServerFiles(asio::ip::tcp::iostream& server, const std::string& path, std::vector<File>& files);
 	void checkLocalFiles(const std::string& rootpath, const std::string& path, std::vector<File>& files);
 	void sync(asio::ip::tcp::iostream& server);
@@ -37,8 +37,8 @@ private:
 	int expectedRows = 1;
 	bool expectRowAmount = false;
 	bool receiveFile = false;
-	std::string writePath = "";
-	std::string sendPath = "";
-	std::string req;
+	//std::string writePath = "";
+	//std::string sendPath = "";
+	//std::string req;
 };
 

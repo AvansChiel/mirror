@@ -60,17 +60,24 @@ void put(const std::string& path, const std::string& size, asio::ip::tcp::iostre
 
     try
     {
-        int byteAmount = std::stoi(size) + 1;
-        char* buffer = new char[byteAmount];
-        byteAmount--;
-        buffer[byteAmount] = '\0';
-
-        client.read(buffer, byteAmount);
+        int byteAmount = std::stoi(size);
+        std::vector<char> buffer(byteAmount);
+        client.read(buffer.data(), byteAmount);
 
         std::ofstream ofs;
-        ofs.open(rootPath + "/" + path);
-        ofs << buffer;
+        ofs.open(rootPath + "/" + path, std::ios::out | std::ios::trunc | std::ios::binary);
+        ofs.write(buffer.data(), byteAmount);
         ofs.close();
+
+     /*   int byteAmount = std::stoi(resp);
+        std::vector<char> buffer(byteAmount);
+        server.read(buffer.data(), byteAmount);
+
+        std::ofstream ofs;
+        ofs.open(rootPath + "/" + par1, std::ios::out | std::ios::trunc | std::ios::binary);
+        ofs.write(buffer.data(), byteAmount);
+        ofs.close();
+        done = true;*/
 
         client << "OK" << crlf;
 
@@ -98,14 +105,21 @@ void get(const std::string& path, asio::ip::tcp::iostream& client) {
     }   
     try
     {
+        int fileSize = std::filesystem::file_size(fullPath);
         client << std::filesystem::file_size(fullPath) << crlf;
         std::ifstream input(fullPath, std::ios::binary);
-        std::string reply;
+        std::vector<char> buffer(fileSize);;
+        //buffer.data()
+        input.read(buffer.data(), fileSize);
+
+        client.write(buffer.data(), fileSize);
+        /*std::string reply;
         char buf[512];
         while (input.read(buf, sizeof(buf)).gcount() > 0)
-            reply.append(buf, input.gcount());
+            reply.append(buf, input.gcount());*/
 
-        client << reply;
+
+        //client << reply;
 
     }
     catch (const std::exception& e)

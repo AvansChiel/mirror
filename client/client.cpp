@@ -115,15 +115,15 @@ std::string put(asio::ip::tcp::iostream& server, std::string path = "") {
 			filepath = filepath.substr(2, filepath.length());
 		}
 	}
-	
+	int fileSize = std::filesystem::file_size(rootPath + "/" + filepath);
 	server << "put" << crlf << filepath << crlf << std::filesystem::file_size(rootPath + "/" + filepath) << crlf;
 	std::ifstream input(rootPath + "/" + filepath, std::ios::binary);
-	std::string reply;
-	char buf[512];
-	while (input.read(buf, sizeof(buf)).gcount() > 0)
-		reply.append(buf, input.gcount());
+	std::vector<char> buffer(fileSize);;
+	input.read(buffer.data(), fileSize);
 
-	server << reply;
+	server.write(buffer.data(), fileSize);
+
+	//server << reply;
 	while (!done) {
 		if (getline(server, resp)) {
 			resp.erase(resp.end() - 1);
@@ -153,16 +153,13 @@ void get(asio::ip::tcp::iostream& server) {
 				std::cout << resp << lf;
 				return;
 			}
-			int byteAmount = std::stoi(resp) + 1;
-			char* buffer = new char[byteAmount];
-			byteAmount--;
-			buffer[byteAmount] = '\0';
-
-			server.read(buffer, byteAmount);
+			int byteAmount = std::stoi(resp);
+			std::vector<char> buffer(byteAmount);
+			server.read(buffer.data(), byteAmount);
 
 			std::ofstream ofs;
-			ofs.open(rootPath + "/" +  par1);
-			ofs << buffer;	
+			ofs.open(rootPath + "/" +  par1, std::ios::out | std::ios::trunc | std::ios::binary);
+			ofs.write(buffer.data(), byteAmount);
 			ofs.close();
 			done = true;
 

@@ -53,6 +53,11 @@ void put(const std::string& path, const std::string& size, asio::ip::tcp::iostre
         return;
     }
 
+    std::filesystem::space_info info = std::filesystem::space(rootPath);
+    if (std::stoi(size) > info.available) {
+        client << "Error: Not enough space available" << crlf;
+    }
+
     try
     {
         int byteAmount = std::stoi(size) + 1;

@@ -156,6 +156,11 @@ void DataMirrorServer::get(const std::string& path, asio::ip::tcp::iostream& cli
         client << "Error: No such file or directory" << crlf;
         return;
     }
+
+    if (!std::filesystem::is_regular_file(fullPath)) {
+        client << "Error: is not a file" << crlf;
+        return;
+    }
     try
     {
         int fileSize = std::filesystem::file_size(fullPath);
@@ -177,7 +182,7 @@ void DataMirrorServer::get(const std::string& path, asio::ip::tcp::iostream& cli
 void DataMirrorServer::del(asio::ip::tcp::iostream& client, const std::string& path) {
     std::string fullPath = rootPath;
 
-    if (path != "" && path.substr(0, 1) != ".") {
+    if (path != "" && path.substr(0, 1) != "." && path.substr(0, 1) != "/") {
         fullPath = rootPath + "/" + path;
     }
     else {
@@ -263,6 +268,10 @@ void DataMirrorServer::dir(asio::ip::tcp::iostream& client, const std::string& p
     std::string fullPath = rootPath;
     if (path != "" && path != ".") {
         fullPath = rootPath + "/" + path;
+    }
+    if (path.substr(0, 3) == "../") {
+        client << "Error: Permission denied" << crlf;
+        return;
     }
     if (!std::filesystem::exists(fullPath)) {
         client << "Error: Directory does not exist" << crlf;

@@ -69,16 +69,6 @@ void put(const std::string& path, const std::string& size, asio::ip::tcp::iostre
         ofs.write(buffer.data(), byteAmount);
         ofs.close();
 
-     /*   int byteAmount = std::stoi(resp);
-        std::vector<char> buffer(byteAmount);
-        server.read(buffer.data(), byteAmount);
-
-        std::ofstream ofs;
-        ofs.open(rootPath + "/" + par1, std::ios::out | std::ios::trunc | std::ios::binary);
-        ofs.write(buffer.data(), byteAmount);
-        ofs.close();
-        done = true;*/
-
         client << "OK" << crlf;
 
     }

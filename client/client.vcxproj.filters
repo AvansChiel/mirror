@@ -21,12 +21,15 @@
     <ClCompile Include="File.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DataMirrorClient.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Directory.h">
+    <ClInclude Include="File.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="File.h">
+    <ClInclude Include="DataMirrorClient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

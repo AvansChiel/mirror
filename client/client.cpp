@@ -81,6 +81,14 @@ std::string put(asio::ip::tcp::iostream& server) {
 		//req = "";
 	}
 
+	if (sendPath.substr(0, 1) == "." || sendPath.substr(0, 1) == "/") {
+		return "Error: Permission denied";
+	}
+	if (!std::filesystem::exists(rootPath + "/" + sendPath)) {
+		return "Error: file not found";
+	}
+
+
 	server << "put" << crlf << sendPath << crlf << std::filesystem::file_size(rootPath + "/" + sendPath) << crlf;
 	std::ifstream input(rootPath + "/" + sendPath, std::ios::binary);
 	std::string reply;
@@ -114,6 +122,10 @@ void get(asio::ip::tcp::iostream& server) {
 	while (!done) {
 		if (getline(server, resp)) {
 			resp.erase(resp.end() - 1);//remove r
+			if (!is_number(resp)) {
+				std::cout << resp << lf;
+				return;
+			}
 			int byteAmount = std::stoi(resp) + 1;
 			char* buffer = new char[byteAmount];
 			byteAmount--;
@@ -246,45 +258,7 @@ std::string info(asio::ip::tcp::iostream& server) {
 }
 
 void checkFolder(const std::string& path) {
-	//using directory_iterator = std::filesystem::directory_iterator;
-	//std::string fullPath = rootPath;
 
-	//try {
-	//	for (const auto& dirEntry : directory_iterator(fullPath)) {
-	//		counter++;
-	//		std::string type;
-
-	//		if (dirEntry.is_directory()) {
-	//			resultString += "D|";
-	//		}
-	//		else if (dirEntry.is_regular_file()) {
-	//			resultString += "F|";
-	//		}
-	//		else {
-	//			resultString += "*|";
-	//		}
-	//		struct tm newTime;
-	//		std::time_t timestamp = to_time_t<decltype(dirEntry.last_write_time())>(dirEntry.last_write_time());
-	//		localtime_s(&newTime, &timestamp);
-
-	//		resultString += dirEntry.path().filename().string() + "|";
-	//		
-
-	//		std::string filesize;
-	//		if (dirEntry.file_size() < 0) {
-	//			filesize = "0";
-	//		}
-	//		else {
-	//			filesize = std::to_string(dirEntry.file_size());
-	//		}
-	//		resultString += filesize + "";
-	//		resultString += crlf;
-	//	}
-	//}
-	//catch (const std::exception& ex) {
-	//	client << "Error: failed" << crlf;
-	//	return;
-	//}
 }
 
 void sync() {
@@ -301,44 +275,6 @@ int main() {
 		bool first = true;
 		
 		while (server) {
-			//std::string resp;
-			//while (expectedRows > 0) {
-			//	if (writePath != "") {
-			//		std::string binaryData;
-			//		if (getline(server, resp)) {
-			//			resp.erase(resp.end() - 1);//remove r
-			//			int byteAmount = std::stoi(resp) + 1;
-			//			char* buffer = new char[byteAmount];
-			//			byteAmount--;
-			//			buffer[byteAmount] = '\0';
-
-			//			server.read(buffer, byteAmount);
-
-			//			std::ofstream ofs;
-			//			ofs.open(rootPath + "/" +  writePath);
-			//			ofs << buffer;	
-			//			ofs.close();
-			//			//expectedRows
-			//			expectedRows--;
-			//			//getline(server, resp);
-			//			writePath = "";
-			//		}
-			//	} else if (getline(server, resp)) {
-			//		resp.erase(resp.end() - 1); // remove '\r'
-			//		expectedRows--;
-			//		if (expectRowAmount) {
-			//			if (is_number(resp)) {
-			//				expectedRows = std::stoi(resp);
-			//			}
-			//			expectRowAmount = false;
-			//		}
-			//		std::cout << resp << lf;
-			//		if (resp == "Bye.") break;
-			//	}
-			//	
-			//}
-			//expectedRows = 1;
-			//expectRowAmount = false;
 			if (first) {
 				std::string welcome;
 				if (getline(server, welcome)) {

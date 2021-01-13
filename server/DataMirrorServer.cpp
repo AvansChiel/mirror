@@ -162,17 +162,9 @@ void DataMirrorServer::get(const std::string& path, asio::ip::tcp::iostream& cli
         client << std::filesystem::file_size(fullPath) << crlf;
         std::ifstream input(fullPath, std::ios::binary);
         std::vector<char> buffer(fileSize);;
-        //buffer.data()
         input.read(buffer.data(), fileSize);
-
         client.write(buffer.data(), fileSize);
-        /*std::string reply;
-        char buf[512];
-        while (input.read(buf, sizeof(buf)).gcount() > 0)
-            reply.append(buf, input.gcount());*/
 
-
-            //client << reply;
 
     }
     catch (const std::exception& e)

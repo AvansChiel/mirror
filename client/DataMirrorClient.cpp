@@ -31,11 +31,7 @@ const std::string DataMirrorClient::put(asio::ip::tcp::iostream& server, std::st
 	std::string filepath;
 	if (path == "") {
 		std::cout << "type path:";
-		if (getline(std::cin, filepath)) {
-			//sendPath = filepath;
-			//sendFileToServer(server);
-			//req = "";
-		}
+		getline(std::cin, filepath);
 		if (filepath.substr(0, 1) == "." || filepath.substr(0, 1) == "/") {
 			return "Error: Permission denied";
 		}
@@ -75,10 +71,7 @@ void DataMirrorClient::get(asio::ip::tcp::iostream& server) {
 	receiveFile = true;
 	std::string par1;
 	std::cout << "type path:";
-	if (getline(std::cin, par1)) {
-		//req += crlf;
-		//req += par1;
-	}
+	getline(std::cin, par1);
 
 	server << "get" << crlf << par1 << crlf;
 	while (!done) {
@@ -109,10 +102,7 @@ const std::string DataMirrorClient::del(asio::ip::tcp::iostream& server, std::st
 	std::string par1;
 	if (path == "") {
 		std::cout << "type path:";
-		if (getline(std::cin, par1)) {
-			//req += crlf;
-			//req += par1;
-		}
+		getline(std::cin, par1);
 	}
 	else {
 		par1 = path;
@@ -137,15 +127,9 @@ const std::string DataMirrorClient::ren(asio::ip::tcp::iostream& server) {
 	std::string par1;
 	std::string par2;
 	std::cout << "type path to change:";
-	if (getline(std::cin, par1)) {
-		//req += crlf;
-		//req += par1;
-	}
+	getline(std::cin, par1);
 	std::cout << "type new name:";
-	if (getline(std::cin, par2)) {
-		//req += crlf;
-		//req += par2;
-	}
+	getline(std::cin, par2);
 	server << "ren" << crlf << par1 << crlf << par2 << crlf;
 	while (!done) {
 		if (getline(server, resp)) {
@@ -166,10 +150,7 @@ const std::vector<std::string> DataMirrorClient::dir(asio::ip::tcp::iostream& se
 	if (path == "") {
 		std::string par1;
 		std::cout << "type path:";
-		if (getline(std::cin, pathparam)) {
-			//req += crlf;
-			//req += par1;
-		}
+		getline(std::cin, pathparam);
 	}
 	else {
 		pathparam = path;
@@ -203,15 +184,9 @@ const std::string DataMirrorClient::mkdir(asio::ip::tcp::iostream& server, std::
 	std::string par2;
 	if (path == "") {
 		std::cout << "type path:";
-		if (getline(std::cin, par1)) {
-			//req += crlf;
-			//req += par1;
-		}
+		getline(std::cin, par1);
 		std::cout << "type new dirname:";
-		if (getline(std::cin, par2)) {
-			//req += crlf;
-			//req += par2;
-		}
+		getline(std::cin, par2);
 		server << "mkdir" << crlf << par1 << crlf << par2 << crlf;
 	}
 	else {

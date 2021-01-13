@@ -430,6 +430,7 @@ void sync(asio::ip::tcp::iostream& server) {
 		}
 	}
 
+	//create or overwrite file/directory's in the putqueue
 	for (File f : putQueue) {
 		if (f.type == "D") {
 			mkdir(server, f.path);
@@ -439,16 +440,11 @@ void sync(asio::ip::tcp::iostream& server) {
 		}
 	}
 
+	//delete files or directories in the deletequeue
 	for (int k = deleteQueue.size() -1; k >= 0; k--) {
 		del(server, deleteQueue[k].path);
 	}
-
-	/*for (File f : deleteQueue) {
-		del()
-	}*/
-
-	std::cout << "done finding files" << lf;
-
+	std::cout << "Done Syncing" << lf;
 }
 
 int main() {

@@ -10,7 +10,6 @@ int main() {
 	try {
 		DataMirrorClient client;
 		client.startLoop();
-
 	}
 	catch (const std::exception& ex) {
 		std::cerr << "client: " << ex.what() << '\n';

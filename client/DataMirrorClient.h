@@ -15,7 +15,7 @@ public:
 private:
 	template <typename TP>
 	std::time_t to_time_t(TP tp);
-	bool is_number(const std::string& s);
+	bool isNumber(const std::string& s);
 	std::time_t getDateTimeFromString(std::string datetime);
 	std::string put(asio::ip::tcp::iostream& server, std::string path = "");
 	void get(asio::ip::tcp::iostream& server);

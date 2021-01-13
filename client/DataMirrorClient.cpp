@@ -9,15 +9,12 @@ std::time_t DataMirrorClient::to_time_t(TP tp)
 	return system_clock::to_time_t(sctp);
 }
 
-bool DataMirrorClient::is_number(const std::string& s)
+bool DataMirrorClient::isNumber(const std::string& s)
 {
 	std::string::const_iterator it = s.begin();
 	while (it != s.end() && std::isdigit(*it)) ++it;
 	return !s.empty() && it == s.end();
-
-
 }
-
 
 std::time_t DataMirrorClient::getDateTimeFromString(std::string datetime) {
 	const std::string temp = datetime;
@@ -27,7 +24,6 @@ std::time_t DataMirrorClient::getDateTimeFromString(std::string datetime) {
 	std::time_t time = mktime(&tm);
 	return time;
 }
-
 
 std::string DataMirrorClient::put(asio::ip::tcp::iostream& server, std::string path) {
 	std::string resp;
@@ -88,7 +84,7 @@ void DataMirrorClient::get(asio::ip::tcp::iostream& server) {
 	while (!done) {
 		if (getline(server, resp)) {
 			resp.erase(resp.end() - 1);//remove r
-			if (!is_number(resp)) {
+			if (!isNumber(resp)) {
 				std::cout << resp << lf;
 				return;
 			}
@@ -182,7 +178,7 @@ std::vector<std::string> DataMirrorClient::dir(asio::ip::tcp::iostream& server, 
 	while (!done) {
 		if (getline(server, resp)) {
 			resp.erase(resp.end() - 1);
-			if (!is_number(resp)) {
+			if (!isNumber(resp)) {
 				std::cout << resp << lf;
 				return records;
 			}
@@ -262,11 +258,6 @@ void DataMirrorClient::checkServerFiles(asio::ip::tcp::iostream& server, const s
 		std::string filesize = record.substr(0, record.length());
 		record.erase(0, record.find(delimiter) + 1);
 
-		/*for (int j = 0; j < depth; j++) {
-			printString += "...";
-		}*/
-
-		//printString += type + "|" + filepath + "|" + datetime + "|" + filesize + crlf;
 		File file = { type, path + "/" + filepath, getDateTimeFromString(datetime), std::stoi(filesize) };
 		files.push_back(file);
 
@@ -406,7 +397,6 @@ void DataMirrorClient::startLoop()
 				for (std::string record : dir(server)) {
 					std::cout << record << lf;
 				}
-
 			}
 			else if (req == "mkdir") {
 				std::cout << mkdir(server) << lf;
@@ -428,6 +418,11 @@ void DataMirrorClient::startLoop()
 			}
 			else if (req == "sync") {
 				sync(server);
+			}
+			else if (req == "quit") {
+				server << "quit" << crlf;
+				server.close();
+				break;
 			}
 
 		}

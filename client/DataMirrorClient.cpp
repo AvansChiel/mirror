@@ -68,7 +68,6 @@ const std::string DataMirrorClient::put(asio::ip::tcp::iostream& server, std::st
 void DataMirrorClient::get(asio::ip::tcp::iostream& server) {
 	bool done = false;
 	std::string resp;
-	receiveFile = true;
 	std::string par1;
 	std::cout << "type path:";
 	getline(std::cin, par1);
@@ -288,7 +287,6 @@ void DataMirrorClient::sync(asio::ip::tcp::iostream& server) {
 	//find files in own space
 	std::vector<File> serverFiles;
 	std::vector<File> localFiles;
-	//std::vector<File> mkdirQueue;
 	std::vector<File> putQueue;
 	std::vector<File> deleteQueue;
 	checkServerFiles(server, ".", serverFiles);

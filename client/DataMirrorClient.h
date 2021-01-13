@@ -1,12 +1,12 @@
-#pragma once
+#include <asio.hpp>
 #include <iostream>
 #include <cstdlib>
 #include <string>
 #include <stdexcept>
-#include <asio.hpp>
 #include <filesystem>
 #include <fstream>
 #include "File.h"
+#pragma once
 class DataMirrorClient
 {
 
@@ -34,9 +34,6 @@ private:
 	const std::string lf{ "\n" };
 	const std::string crlf{ "\r\n" };
 	const std::string rootPath = "E:/datamirror/client";
-	int expectedRows = 1;
-	bool expectRowAmount = false;
-	bool receiveFile = false;
 
 };
 

@@ -1,11 +1,10 @@
+#include <asio.hpp>
 #include <iostream>
 #include <cstdlib>
 #include <string>
 #include <stdexcept>
-#include <asio.hpp>
 #include <filesystem>
 #include <fstream>
-
 #pragma once
 class DataMirrorServer
 {

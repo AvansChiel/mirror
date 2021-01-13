@@ -37,8 +37,6 @@ private:
 	int expectedRows = 1;
 	bool expectRowAmount = false;
 	bool receiveFile = false;
-	//std::string writePath = "";
-	//std::string sendPath = "";
-	//std::string req;
+
 };
 

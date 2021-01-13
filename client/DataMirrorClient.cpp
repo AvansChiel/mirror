@@ -20,7 +20,7 @@ const std::time_t DataMirrorClient::getDateTimeFromString(std::string datetime) 
 	const std::string temp = datetime;
 	struct std::tm tm;
 	std::stringstream ss(datetime);
-	ss >> std::get_time(&tm, "%d-%m-%Y %H:%M:%S");
+	ss >> std::get_time(&tm, "%Y-%m-%d %H:%M:%S");
 	std::time_t time = mktime(&tm);
 	return time;
 }

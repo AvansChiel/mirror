@@ -2,6 +2,8 @@
 
 void DataMirrorServer::startLoop()
 {
+
+
     asio::io_context io_context;
     asio::ip::tcp::acceptor server{ io_context, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), server_port) };
     for (;;) {
@@ -11,8 +13,19 @@ void DataMirrorServer::startLoop()
         std::cerr << "client connected from " << client.socket().local_endpoint() << lf;
         client << "Welcome to AvanSync server 1.0" << crlf;
         for (;;) {
+            //check if client is still alive
+            //if not, break for loop
+            if (!client) {
+                std::cerr << "disconnecting from client" << client.socket().local_endpoint() << lf;
+                client.close();
+                break;
+            }
+
             std::string request;
             if (getline(client, request)) {
+                if (request.begin() == request.end()) {
+                    continue;
+                }
                 request.erase(request.end() - 1); // remove '\r'
 
                 std::cerr << "client says: " << request << lf;
@@ -291,7 +304,7 @@ void DataMirrorServer::dir(asio::ip::tcp::iostream& client, const std::string& p
             std::string hour = std::to_string(newTime.tm_hour);
             std::string min = std::to_string(newTime.tm_min);
             std::string sec = std::to_string(newTime.tm_sec);
-            resultString += day + "-" + month + "-" + year + " " + hour + ":" + min + ":" + sec + "|";
+            resultString += year + "-" + month + "-" + day + " " + hour + ":" + min + ":" + sec + "|";
 
             std::string filesize;
             if (dirEntry.file_size() < 0) {
